@@ -4,6 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:push_app/config/local_notification/local_notifications.dart';
 import 'package:push_app/domain/entities/push_message.dart';
 import 'package:push_app/firebase_options.dart';
 
@@ -21,8 +22,18 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   FirebaseMessaging messaging = FirebaseMessaging.instance;
+  int pushNumberId = 0;
+  final Future<void> Function() requestNotificationPermissions;
+  final void Function(
+      {required int id,
+      String? title,
+      String? body,
+      String? data})? showLocalNotification;
 
-  NotificationBloc() : super(const NotificationState()) {
+  NotificationBloc(
+      {required this.requestNotificationPermissions,
+      this.showLocalNotification})
+      : super(const NotificationState()) {
     on<NotificationStatusChanged>(_notificationStatusChanged);
     on<NotificationReceived>(_onPushMessageReceived);
     _initialStatusCheck();
@@ -76,6 +87,13 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
             : message.notification!.apple?.imageUrl);
 
     print(notification);
+    if (showLocalNotification != null) {
+      showLocalNotification!(
+          id: ++pushNumberId,
+          body: notification.body,
+          data: notification.messageId,
+          title: notification.title);
+    }
     add(NotificationReceived(notification));
   }
 
@@ -93,6 +111,12 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       provisional: false,
       sound: true,
     );
+
+    if (requestNotificationPermissions != null) {
+      await requestNotificationPermissions!();
+      //await LocalNotification.requestPermissionLocalNotification();
+    }
+
     add(NotificationStatusChanged(settings.authorizationStatus));
     _getFCMToken();
   }

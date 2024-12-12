@@ -11,7 +11,8 @@ plugins {
 android {
     //namespace = "com.example.push_app"
     namespace = "com.erickdevelop.push_app"
-    compileSdk = flutter.compileSdkVersion
+    //compileSdk = flutter.compileSdkVersion
+    compileSdk = 34
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
